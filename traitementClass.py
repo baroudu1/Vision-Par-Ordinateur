@@ -15,6 +15,13 @@ class traitClass:
     def __init__(self, path):
         self.path = path
         self.img = None
+        self.image = None
+
+
+    def change(self):
+        self.image = cv2.imread(self.path)
+        # print(self.image)
+
 
     def traitement(self, img):
         try:
@@ -35,11 +42,18 @@ class traitClass:
 
     def egalisation_traitement(self):
 
-        image = cv2.imread(self.path)
+        image = self.image
         imag = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.histeq(imag)
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
         self.img = img
         img_finale = self.traitement(img)
+        return img_finale
+
+    def usee(self):
+        img_finale = self.traitement(self.img)
+        self.image = self.img
         return img_finale
 
     def histeq(self, image):
@@ -67,7 +81,7 @@ class traitClass:
 
 
     def etirement_traitement(self):
-        image = cv2.imread(self.path)
+        image = self.image
         imag = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         MaxV = np.max(imag)
         MinV = np.min(imag)
@@ -77,6 +91,8 @@ class traitClass:
             for j in range(m[1]):
                 Y[i, j] = (255 / (MaxV - MinV) * imag[i, j] - MinV)
         img = Y
+
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         self.img = img
         img_finale = self.traitement(img)
         return img_finale
@@ -86,17 +102,19 @@ class traitClass:
         pixmap = QtGui.QPixmap(pathx)
         pixmap4 = pixmap.scaled(311, 311, QtCore.Qt.KeepAspectRatio)
         img_finale = QtGui.QPixmap(pixmap4)
+        self.change()
         return img_finale
 
     def negatif_traitement(self):
-        image = cv2.imread(self.path)
+        image = self.image
         img = 255 - image
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.img = img
         img_finale = self.traitement(img)
         return img_finale
 
     def histogram_traitement(self):
-        image = cv2.imread(self.path)
+        image = self.image
         ###########ADDED###########
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         ###########################
@@ -135,7 +153,7 @@ class traitClass:
         return h
 
     def rotate_image_traitement(self, angle):
-        image = cv2.imread(self.path)
+        image = self.image
         # Get the image size
         # No that's not an error - NumPy stores image matricies backwards
         image_size = (image.shape[1], image.shape[0])
@@ -194,23 +212,25 @@ class traitClass:
             (new_w, new_h),
             flags=cv2.INTER_LINEAR
         )
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.img = img
         img_final = self.traitement(img)
         return img_final
 
     def redimentionnage_traitement(self, pourcentage):
-        image = cv2.imread(self.path)
+        image = self.image
         scale_percent = pourcentage
         width = int(image.shape[1] * scale_percent / 100)
         height = int(image.shape[0] * scale_percent / 100)
         dim = (width, height)
         img = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         self.img = img
         img_final = self.traitement(img)
         return img_final
 
     def binarisationM_traitement(self, s):
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Seuillage(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -230,7 +250,7 @@ class traitClass:
 
     def otsu_traitement(self):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Otsu(image)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -246,7 +266,6 @@ class traitClass:
         final_thresh = -1
         final_value = -1
         intensity_arr = np.arange(256)
-        # This goes from 1 to 254 uint8 range (Pretty sure wont be those values)
         for t in bins[1:-1]:
             pcb = np.sum(his[:t])
             pcf = np.sum(his[t:])
@@ -258,7 +277,6 @@ class traitClass:
                 pcf = 1
             mub = np.sum(intensity_arr[:t] * his[:t]) / float(pcb)
             muf = np.sum(intensity_arr[t:] * his[t:]) / float(pcf)
-            # print mub, muf
             value = Wb * Wf * (mub - muf) ** 2
 
             if value > final_value:
@@ -272,16 +290,16 @@ class traitClass:
 
     def gradient_traitement(self,s):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        img = self.grad(image, s)
+        img = self.gradient(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         self.img = img
         img_final = self.traitement(img)
         return img_final
 
-    def grad(self, image, seuil):
-
+    def gradient(self, image1, seuil):
+        image = self.Seuillage(image1, 110)
         imageX = image.copy()
         imageY = image.copy()
         for i in range(0, image.shape[0] - 2):
@@ -301,7 +319,7 @@ class traitClass:
 
     def sobel_traitement(self, s):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Sobel(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -309,7 +327,9 @@ class traitClass:
         img_final = self.traitement(img)
         return img_final
 
-    def Sobel(self, image, seuil):
+    def Sobel(self, image1, seuil):
+
+        image = self.Seuillage(image1, 110)
         imageX = image.copy()
         imageY = image.copy()
         for i in range(0, image.shape[0] - 2):
@@ -331,9 +351,42 @@ class traitClass:
                     imageXY[i, j] = 255
         return imageXY
 
+    def robert_traitement(self, s):
+
+        image = self.image
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        img = self.Robert(image, s)
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        img_final = self.traitement(img)
+        return img_final
+
+    def Robert(self, image1, seuil):
+
+        image = self.Seuillage(image1,110)
+
+        imageX = image.copy()
+        imageY = image.copy()
+        for i in range(0, image.shape[0] - 1):
+            for j in range(0, image.shape[1] - 1):
+                imageX[i, j] = image[i , j + 1] - image[i + 1, j]
+
+                imageY[i, j] = image[i , j ] - image[i + 1, j+1]
+        imageXY = image.copy()
+        for i in range(0, image.shape[0] - 1):
+            for j in range(0, image.shape[1] - 1):
+                imageXY[i, j] = math.sqrt(
+                    imageX[i, j] ** 2 + imageY[i, j] ** 2)
+                if imageXY[i, j] < seuil:
+                    imageXY[i, j] = 0
+                else:
+                    imageXY[i, j] = 255
+        return imageXY
+
+
+
     def laplacien_traitement(self, s):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Laplacien(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -342,7 +395,9 @@ class traitClass:
         return img_final
 
 
-    def Laplacien(self, image, seuil):
+    def Laplacien(self, image1, seuil):
+
+        image = self.Seuillage(image1, 110)
         imageXY = image.copy()
         for i in range(1, image.shape[0] - 2):
             for j in range(1, image.shape[1] - 1):
@@ -357,7 +412,7 @@ class traitClass:
 
     def dilatation_traitement(self, s):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.dilatation(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -381,11 +436,13 @@ class traitClass:
                     imagecopy[i][j] = 0
                 else:
                     imagecopy[i][j] = 255
+        kernel = np.array(H, "uint8")
+        imagecopy = cv2.dilate(image, kernel, iterations=1)
         return imagecopy
 
     def erosion_traitement(self, s):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Erosion(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -398,13 +455,6 @@ class traitClass:
 
         imagecopy = image.copy()
 
-        for i in range(0, image.shape[0]):
-            for j in range(0, image.shape[1]):
-                if (image[i][j] > 128):
-                    image[i][j] = 255
-                else:
-                    image[i][j] = 0
-
         for i in range(1, image.shape[0] - 2):
             for j in range(1, image.shape[1] - 2):
                 s = 0
@@ -415,11 +465,15 @@ class traitClass:
                     imagecopy[i][j] = 255
                 else:
                     imagecopy[i][j] = 0
+
+        kernel = np.array(H, "uint8")
+        imagecopy = cv2.erode(image, kernel, iterations=1)
+
         return imagecopy
 
     def ouverture_traitement(self, s):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Ouverture(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -434,7 +488,7 @@ class traitClass:
 
     def fermeture_traitement(self, s):
 
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Fermeture(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -448,7 +502,7 @@ class traitClass:
         return image1
 
     def gaussien_traitement(self, s):
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.gaussien(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -477,7 +531,7 @@ class traitClass:
 
 
     def median_traitement(self, s):
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Median(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -487,22 +541,20 @@ class traitClass:
 
     def Median(self,image, taille):
         imagefiltrage = image.copy()
-        x = int((taille - 1) / 2)
+        x = int(taille/ 2)
         for i in range(x, image.shape[0] - x):
             for j in range(x, image.shape[1] - x):
                 liste = []
-                if imagefiltrage[i, j] == 0 or imagefiltrage[i, j] == 255:
-                    for n in range(-x, x):
-                        for m in range(-x, x):
-                            liste.append(imagefiltrage[i + n, j + m])
-                    liste.sort()
-                    imagefiltrage[i, j] = liste[x + 1]
-                    while len(liste) > 0:
-                        liste.pop()
+                for ii in range(x, taille+x):
+                    for jj in range(x, taille+x):
+                        liste.append(image[i-ii][j-jj])
+                liste.sort()
+                median = liste[int(taille*taille/2) +1]
+                imagefiltrage[i][j] = median
         return imagefiltrage
 
     def moyenne_traitement(self, s):
-        image = cv2.imread(self.path)
+        image = self.image
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         img = self.Moyenneur(image, s)
         img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -512,7 +564,7 @@ class traitClass:
 
     def Moyenneur(self,image, taille):
         imagefiltrage = image.copy()
-        x = int((taille - 1)/2)
+        x = int(taille /2)
         for i in range(x, image.shape[0] - x):
             for j in range(x, image.shape[1] - x):
                 s = 0

@@ -197,10 +197,22 @@ class Ui_MainWindow(object):
         self.imageInitiale.setGeometry(QtCore.QRect(280, 70, 311, 311))
         self.imageInitiale.setText("")
         self.imageInitiale.setObjectName("imageInitiale")
+
+        self.usee = QtWidgets.QPushButton(self.centralwidget)
+        self.usee.setGeometry(QtCore.QRect(720, 40, 150, 25))
+        self.usee.setObjectName("usee")
+
+
+
         self.imageTraitee = QtWidgets.QLabel(self.centralwidget)
         self.imageTraitee.setGeometry(QtCore.QRect(620, 70, 311, 311))
         self.imageTraitee.setText("")
         self.imageTraitee.setObjectName("imageTraitee")
+
+
+
+
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 955, 26))
@@ -251,6 +263,8 @@ class Ui_MainWindow(object):
         self.actionGradient.setObjectName("actionGradient")
         self.actionSobel = QtWidgets.QAction(MainWindow)
         self.actionSobel.setObjectName("actionSobel")
+        self.actionRobert = QtWidgets.QAction(MainWindow)
+        self.actionRobert.setObjectName("actionRobert")
         self.actionLaplacien = QtWidgets.QAction(MainWindow)
         self.actionLaplacien.setObjectName("actionLaplacien")
         self.actionErosion = QtWidgets.QAction(MainWindow)
@@ -296,6 +310,8 @@ class Ui_MainWindow(object):
         self.menuContour.addSeparator()
         self.menuContour.addAction(self.actionSobel)
         self.menuContour.addSeparator()
+        self.menuContour.addAction(self.actionRobert)
+        self.menuContour.addSeparator()
         self.menuContour.addAction(self.actionLaplacien)
         self.menuContour.addSeparator()
         self.menuMorphologie.addSeparator()
@@ -333,6 +349,7 @@ class Ui_MainWindow(object):
         self.BinarisationMLabel.setText(_translate("MainWindow", "Sueil :"))
         self.BinarisationMButton.setText(_translate("MainWindow", "Appliquer"))
         self.ImportButton.setText(_translate("MainWindow", "Importer"))
+        self.usee.setText(_translate("MainWindow", "Utiliser image traiter"))
 
         self.labeltest.setText(_translate("MainWindow", "Traitement d\'Images"))
         self.labeltest_2.setText(_translate("MainWindow", "Importer Votre Image Pour Commencer Les Testes"))
@@ -372,6 +389,7 @@ class Ui_MainWindow(object):
         self.actionRedimensionner.setText(_translate("MainWindow", "Redimensionner"))
         self.actionGradient.setText(_translate("MainWindow", "Gradient"))
         self.actionSobel.setText(_translate("MainWindow", "Sobel"))
+        self.actionRobert.setText(_translate("MainWindow", "Robert"))
         self.actionLaplacien.setText(_translate("MainWindow", "Laplacien"))
         self.actionErosion.setText(_translate("MainWindow", "Erosion"))
         self.actionDilatation.setText(_translate("MainWindow", "Dilatation"))
@@ -392,6 +410,7 @@ class Ui_MainWindow(object):
         self.actionOtsu.triggered.connect(self.otsu)
         self.actionGradient.triggered.connect(self.gradient)
         self.actionSobel.triggered.connect(self.sobel)
+        self.actionRobert.triggered.connect(self.robert)
         self.actionLaplacien.triggered.connect(self.Laplacien)
         self.actionErosion.triggered.connect(self.erosion)
         self.actionDilatation.triggered.connect(self.dilatation)
@@ -407,6 +426,10 @@ class Ui_MainWindow(object):
         self.actionRotation.triggered.connect(self.show_rotate_image)
         self.actionRedimensionner.triggered.connect(self.show_redimentionnage)
         self.actionManuelle.triggered.connect(self.show_binarisationM)
+
+        self.usee.clicked.connect(self.useee)
+
+
 ####################################Functions##################################################
     def hideAll(self):
         self.asideRedimensionnage.hide()
@@ -419,17 +442,27 @@ class Ui_MainWindow(object):
     def hideAll2(self):
         self.imageInitiale.hide()
         self.imageTraitee.hide()
+        self.usee.hide()
         self.label.hide()
         self.label_2.hide()
         self.menubar.hide()
+
 
     def showAll(self):
         self.widget_test.hide()
         self.imageInitiale.show()
         self.imageTraitee.show()
+        self.usee.show()
+
         self.label.show()
         self.label_2.show()
         self.menubar.show()
+
+    def useee(self):
+        self.hideAll()
+        img_final = self.object.usee()
+        self.imageInitiale.setPixmap(img_final)
+        self.functionName.setText("Importing")
 
     def enregistrement(self):
         x = "Image" + self.functionName.text()
@@ -519,6 +552,12 @@ class Ui_MainWindow(object):
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Sobel")
 
+    def robert(self):
+        self.hideAll()
+        img_final = self.object.robert_traitement(50)
+        self.imageTraitee.setPixmap(img_final)
+        self.functionName.setText("Robert")
+
     def Laplacien(self):
         self.hideAll()
         img_final = self.object.laplacien_traitement(50)
@@ -527,14 +566,15 @@ class Ui_MainWindow(object):
 
     def erosion(self):
         self.hideAll()
-        h = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
+
         img_final = self.object.erosion_traitement(h)
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Erosion")
 
     def dilatation(self):
         self.hideAll()
-        h = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
+        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
         img_final = self.object.dilatation_traitement(h)
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Dilatation")
@@ -542,14 +582,14 @@ class Ui_MainWindow(object):
 
     def fermeture(self):
         self.hideAll()
-        h = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
+        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
         img_final = self.object.fermeture_traitement(h)
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Fermeture")
 
     def ouverture(self):
         self.hideAll()
-        h = [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
+        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
         img_final = self.object.ouverture_traitement(h)
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Ouverture")
