@@ -566,7 +566,7 @@ class Ui_MainWindow(object):
 
     def erosion(self):
         self.hideAll()
-        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
+        h = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
 
         img_final = self.object.erosion_traitement(h)
         self.imageTraitee.setPixmap(img_final)
@@ -574,7 +574,7 @@ class Ui_MainWindow(object):
 
     def dilatation(self):
         self.hideAll()
-        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
+        h = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
         img_final = self.object.dilatation_traitement(h)
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Dilatation")
@@ -582,14 +582,14 @@ class Ui_MainWindow(object):
 
     def fermeture(self):
         self.hideAll()
-        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
+        h = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
         img_final = self.object.fermeture_traitement(h)
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Fermeture")
 
     def ouverture(self):
         self.hideAll()
-        h = [[0, 1, 0], [0, 1, 0], [0, 1, 0]]
+        h = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
         img_final = self.object.ouverture_traitement(h)
         self.imageTraitee.setPixmap(img_final)
         self.functionName.setText("Ouverture")
