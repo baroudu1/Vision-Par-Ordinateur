@@ -5,10 +5,12 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from PyQt5 import QtGui, QtCore
-
-
+from skimage.filters import sobel,gaussian
+from skimage.feature import peak_local_max
 import warnings
 warnings.filterwarnings("ignore")
+
+
 
 class traitClass:
 
@@ -299,7 +301,7 @@ class traitClass:
         return img_final
 
     def gradient(self, image1, seuil):
-        image = self.Seuillage(image1, 110)
+        image = self.Otsu(image1)
         imageX = image.copy()
         imageY = image.copy()
         for i in range(0, image.shape[0] - 2):
@@ -329,7 +331,7 @@ class traitClass:
 
     def Sobel(self, image1, seuil):
 
-        image = self.Seuillage(image1, 110)
+        image = self.Otsu(image1)
         imageX = image.copy()
         imageY = image.copy()
         for i in range(0, image.shape[0] - 2):
@@ -362,7 +364,7 @@ class traitClass:
 
     def Robert(self, image1, seuil):
 
-        image = self.Seuillage(image1,110)
+        image = self.Otsu(image1)
 
         imageX = image.copy()
         imageY = image.copy()
@@ -397,7 +399,7 @@ class traitClass:
 
     def Laplacien(self, image1, seuil):
 
-        image = self.Seuillage(image1, 110)
+        image = self.Otsu(image1)
         imageXY = image.copy()
         for i in range(1, image.shape[0] - 2):
             for j in range(1, image.shape[1] - 1):
@@ -568,11 +570,284 @@ class traitClass:
         for i in range(x, image.shape[0] - x):
             for j in range(x, image.shape[1] - x):
                 s = 0
-                for n in range(-x, x):
-                    for m in range(-x, x):
-                        s += image[i+n, j+m]/(taille*taille)
-                imagefiltrage[i, j] = s
+                for n in range(x, taille+x):
+                    for m in range(x, taille+x):
+                        s += image[i-n, j-m]
+                imagefiltrage[i, j] = s/(taille*taille)
         return imagefiltrage
     def enregistrement_traitememt(self, fileName):
 
         cv2.imwrite(fileName, self.img)
+
+    # def regionGrow_traitememt1(self):
+    #     image = self.image
+    #     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    #
+    #     seeds = [[20, 100], [82, 150], [20, 250]]
+    #     img = self.regionGrow(image, seeds, 10).astype(np.uint8)
+    #     img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    #
+    #     img_final = self.traitement(img)
+    #     self.img = img
+    #     return img_final
+    #
+    # def getGrayDiff(self,img, currentPoint, tmpPoint):
+    #     return abs(int(img[currentPoint[0], currentPoint[1]]) - int(img[tmpPoint[0], tmpPoint[1]]))
+    #
+    # def selectConnects(self,p):
+    #     if p != 0:
+    #         connects = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]]
+    #     else:
+    #         connects = [[0, -1], [1, 0], [0, 1], [-1, 0]]
+    #     return connects
+    #
+    # def regionGrow(self, img, seeds, thresh, p=1):
+    #     try:
+    #         height, weight = img.shape
+    #         seedMark = np.zeros(img.shape)
+    #         seedList = []
+    #         for seed in seeds:
+    #             seedList.append(seed)
+    #         label = 255
+    #         connects = self.selectConnects(p)
+    #         while (len(seedList) > 0):
+    #             currentPoint = seedList.pop(0)
+    #             #print(currentPoint)
+    #             seedMark[currentPoint[0], currentPoint[1]] = label
+    #             for i in range(8):
+    #                 tmpX = currentPoint[0] + connects[i][0]
+    #                 tmpY = currentPoint[1] + connects[i][1]
+    #                 if tmpX < 0 or tmpY < 0 or tmpX >= height or tmpY >= weight:
+    #                     continue
+    #                 grayDiff = self.getGrayDiff(img, currentPoint, [tmpX, tmpY])
+    #                 if grayDiff < thresh and seedMark[tmpX, tmpY] == 0:
+    #                     seedMark[tmpX, tmpY] = label
+    #                     seedList.append([tmpX, tmpY])
+    #         return seedMark
+    #     except Exception as e:
+    #         print(e)
+
+    def kMeansSegmentation(self,img,k):
+        try:
+            h, w = img.shape
+            image_2d = img.reshape(h * w, 1)
+            pixel_vals = np.float32(image_2d)
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.85)
+            retval, labels, centers = cv2.kmeans(pixel_vals, k, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+            centers = np.uint8(centers)
+            segmented_data = centers[labels.flatten()]
+            segmented_image = segmented_data.reshape((img.shape))
+            return segmented_image
+
+        except Exception as e:
+            print("kMeansSegmentation ERROR : ", e)
+
+    def kmeans_traitement(self, k):
+        image = self.image
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        img = self.kMeansSegmentation(image, k)
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+        img_final = self.traitement(img)
+        self.img = img
+        return img_final
+
+    def regionGrow_traitememt(self):
+
+        img = self.Growing()
+
+        img_final = self.traitement(img)
+        self.img = img
+        return img_final
+
+
+    # def regionGrow1(self,image):
+    #     img = image
+    #     gray_img = gaussian(img, sigma=4)
+    #     brgb = sobel(gray_img[:, :])
+    #
+    #     markers = peak_local_max(brgb.max()-brgb)
+    #
+    #     markers = peak_local_max(brgb.max() - brgb, threshold_rel=0.99, min_distance=50)
+    #     (thresh, bin_img) = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY)
+    #
+    #     h = img.shape[0]
+    #     w = img.shape[1]
+    #
+    #     out_img = np.zeros(shape=(gray_img.shape), dtype=np.uint8)
+    #     print("markers: ", markers)
+    #     seeds = markers.tolist()
+    #     for seed in seeds:
+    #         x = seed[0]
+    #         y = seed[1]
+    #         out_img[x][y] = 255
+    #     directs = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)]
+    #     visited = np.zeros(shape=(gray_img.shape), dtype=np.uint8)
+    #     while len(seeds):
+    #         seed = seeds.pop(0)
+    #         x = seed[0]
+    #         y = seed[1]
+    #         visited[x][y] = 1
+    #
+    #         for direct in directs:
+    #             cur_x = x + direct[0]
+    #             cur_y = y + direct[1]
+    #             if cur_x < 0 or cur_y < 0 or cur_x >= h or cur_y >= w:
+    #                 continue
+    #             if (not visited[cur_x][cur_y]) and (bin_img[cur_x][cur_y] == bin_img[x][y]):
+    #                 out_img[cur_x][cur_y] = 255
+    #                 visited[cur_x][cur_y] = 1
+    #                 seeds.append((cur_x, cur_y))
+    #     print(visited)
+    #     bake_img = img.copy()
+    #     h = bake_img.shape[0]
+    #     w = bake_img.shape[1]
+    #     for i in range(h):
+    #         for j in range(w):
+    #             if out_img[i][j] != 255:
+    #                 bake_img[i][j] = 0
+    #     print(img)
+    #     print(bake_img)
+    #     return bake_img
+
+    def Markers(self):
+        img = self.image
+        x, y, z = img.shape
+        im_ = gaussian(img, sigma=4)
+        if z == 3:
+            br = sobel(im_[:, :, 0])
+            bg = sobel(im_[:, :, 1])
+            bb = sobel(im_[:, :, 2])
+            brgb = br + bg + bb
+        else:
+            brgb = sobel(im_[:, :])
+
+        markers = peak_local_max(brgb.max() - brgb, threshold_rel=0.99, min_distance=50)
+        return markers
+
+    def Growing(self):
+        markers = self.Markers()
+        img = self.image
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        (thresh, bin_img) = cv2.threshold(gray_img, 127, 255, cv2.THRESH_BINARY)
+
+        h = img.shape[0]
+        w = img.shape[1]
+
+        out_img = np.zeros(shape=(gray_img.shape), dtype=np.uint8)
+
+        seeds = markers.tolist()
+        for seed in seeds:
+            x = seed[0]
+            y = seed[1]
+            out_img[x][y] = 255
+        directs = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)]
+        visited = np.zeros(shape=(gray_img.shape), dtype=np.uint8)
+        while len(seeds):
+            seed = seeds.pop(0)
+            x = seed[0]
+            y = seed[1]
+            visited[x][y] = 1
+
+            for direct in directs:
+                cur_x = x + direct[0]
+                cur_y = y + direct[1]
+                if cur_x < 0 or cur_y < 0 or cur_x >= h or cur_y >= w:
+                    continue
+                if (not visited[cur_x][cur_y]) and (bin_img[cur_x][cur_y] == bin_img[x][y]):
+                    out_img[cur_x][cur_y] = 255
+                    visited[cur_x][cur_y] = 1
+                    seeds.append((cur_x, cur_y))
+        bake_img = img.copy()
+        h = bake_img.shape[0]
+        w = bake_img.shape[1]
+        for i in range(h):
+            for j in range(w):
+                if out_img[i][j] != 255:
+                    bake_img[i][j][0] = 255
+                    bake_img[i][j][1] = 255
+                    bake_img[i][j][2] = 255
+
+        return bake_img
+
+    def Division_Judge(self, img, h0, w0, h, w):
+        area = img[h0: h0 + h, w0: w0 + w]
+        mean = np.mean(area)
+        std = np.std(area, ddof=1)
+
+        total_points = 0
+        operated_points = 0
+
+        for row in range(area.shape[0]):
+            for col in range(area.shape[1]):
+                if (area[row][col] - mean) < 2 * std:
+                    operated_points += 1
+                total_points += 1
+
+        if operated_points / total_points >= 0.95:
+            return True
+        else:
+            return False
+
+    def Merge(self, img, h0, w0, h, w):
+
+        for row in range(h0, h0 + h):
+            for col in range(w0, w0 + w):
+                if img[row, col] > 100 and img[row, col] < 200:
+                    img[row, col] = 0
+                else:
+                    img[row, col] = 255
+
+    def Recursion(self, img, h0, w0, h, w):
+        # If the splitting conditions are met, continue to split
+        if not self.Division_Judge(img, h0, w0, h, w) and min(h, w) > 5:
+            # Recursion continues to determine whether it can continue to split
+            # Top left square
+            self.Division_Judge(img, h0, w0, int(h0 / 2), int(w0 / 2))
+            # Upper right square
+            self.Division_Judge(img, h0, w0 + int(w0 / 2), int(h0 / 2), int(w0 / 2))
+            # Lower left square
+            self.Division_Judge(img, h0 + int(h0 / 2), w0, int(h0 / 2), int(w0 / 2))
+            # Lower right square
+            self.Division_Judge(img, h0 + int(h0 / 2), w0 + int(w0 / 2), int(h0 / 2), int(w0 / 2))
+        else:
+            # Merge
+            self.Merge(img, h0, w0, h, w)
+
+    def partition_traitememt(self):
+        img = self.image
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        segemented_img = img_gray.copy()
+        self.Recursion(segemented_img, 0, 0, segemented_img.shape[0], segemented_img.shape[1])
+        img = cv2.cvtColor(segemented_img, cv2.COLOR_GRAY2RGB)
+
+        img_final = self.traitement(img)
+        self.img = img
+        return img_final
+
+    def hit_or_miss_traitememt(self):
+        img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+
+        img = self.hitOrMiss(img)
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        # img = self.Otsu(img)
+        img_final = self.traitement(img)
+        return img_final
+
+    def hitOrMiss(self, image):
+        try:
+            input_image = image
+            kernel = np.array((
+                [0,  1, 0],
+                [1, -1, 1],
+                [0,  1, 0]), dtype="int")
+
+            output_image = cv2.morphologyEx(input_image, cv2.MORPH_HITMISS, kernel)
+            return output_image
+
+
+        except Exception as e:
+            print("hit or miss ERROR = ", e)
+
