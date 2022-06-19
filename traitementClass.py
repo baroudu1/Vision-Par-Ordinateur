@@ -120,29 +120,23 @@ class traitClass:
         ###########ADDED###########
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         ###########################
-        k = 0
-        try:
-            test = image.shape[2]
-        except IndexError:
-            k = 1
-        if k == 1:
-            h = self.histo(image)
-            plt.subplot(1, 1, 1)
-            plt.plot(h)
-            plt.savefig('Y_X.png')
-        else:
-            for i in range(0, 3):
-                h = self.histo(image[:, :, i])
-                plt.subplot(1, 3, i + 1)
-                plt.plot(h)
-            plt.savefig('Y_X.png')
 
+        h = self.histo(image)
+
+        plt.subplot(1, 1, 1)
+        plt.plot(h)
+        plt.savefig("Y_X.png")
+        plt.close()
         img = cv2.imread("Y_X.png")
         self.img = img
-        img_final = self.traitement(img)
-        files = glob.glob('Y_X.png')
+
+
+        files = glob.glob("Y_X.png")
         for i in files:
             os.remove(i)
+
+        img_final = self.traitement(img)
+
         return img_final
 
     def histo(self, image):
